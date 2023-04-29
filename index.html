@@ -1,0 +1,483 @@
+<html>
+  <script src="https://aframe.io/releases/1.0.4/aframe.min.js"></script>
+  <!-- we import arjs version without NFT but with marker + location based support -->
+  <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
+  <script src="https://raw.githack.com/fcor/arjs-gestures/master/dist/gestures.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@v6.1.1/dist/aframe-extras.min.js"></script>
+  <script src="https://rawgit.com/nicolocarpignoli/nicolocarpignoli.github.io/master/ar-click-events/events.js"></script>
+
+  <body
+    style="margin: 0px; overflow: hidden"
+    onclick="portal_animate(); animate_scene();"
+  >
+    <script>
+      <!--Material for portal illusion-->
+      AFRAME.registerComponent("cloak2", {
+        init: function () {
+          // make sure the model is loaded first
+          this.el.addEventListener("model-loaded", (e) => {
+            let mesh = this.el.getObject3D("mesh"); // grab the mesh
+            if (mesh === undefined) return; // return if no mesh :(
+            mesh.traverse(function (node) {
+              // traverse through and apply settings
+              if (node.isMesh && node.material) {
+                // make sure the element can be a cloak
+                node.material.colorWrite = false;
+                node.material.needsUpdate = true;
+              }
+            });
+          });
+        },
+      });
+
+      <!--Opacity for portal animation-->
+      AFRAME.registerComponent("model-opacity", {
+        schema: { default: 1.0 },
+        init: function () {
+          this.el.addEventListener("model-loaded", this.update.bind(this));
+        },
+        update: function () {
+          var mesh = this.el.getObject3D("mesh");
+          var data = this.data;
+          if (!mesh) {
+            return;
+          }
+          mesh.traverse(function (node) {
+            if (node.isMesh) {
+              node.material.opacity = data;
+              node.material.transparent = data < 1.0;
+              node.material.needsUpdate = true;
+            }
+          });
+        },
+      });
+    </script>
+
+    <a-scene
+      arjs
+      embedded
+      renderer="logarithmicDepthBuffer: true"
+      vr-mode-ui="enabled: false"
+      id="scene"
+    >
+      <!--portal assets -->
+      <a-assets>
+        <a-asset-item
+          id="portal"
+          src="https://cdn.glitch.global/fbbdc88f-0824-4323-9434-c2e8eef5a758/portal2.glb?v=1676167698370"
+        >
+        </a-asset-item>
+        <a-asset-item
+          id="portalspin"
+          src="https://cdn.glitch.global/fbbdc88f-0824-4323-9434-c2e8eef5a758/portalspin.glb?v=1677460033743"
+        >
+        </a-asset-item>
+
+        <!-- forest assets -->
+        <a-asset-item
+          id="forest"
+          src="https://cdn.glitch.global/fbbdc88f-0824-4323-9434-c2e8eef5a758/arforest_final.glb?v=1677001072890"
+        >
+        </a-asset-item>
+        <a-asset-item
+          id="forestmarker"
+          src="https://cdn.glitch.global/fbbdc88f-0824-4323-9434-c2e8eef5a758/forest_marker.patt?v=1676565679289"
+        >
+        </a-asset-item>
+        <!--speace assets -->
+        <a-asset-item
+          id="speace"
+          src="https://cdn.glitch.me/fbbdc88f-0824-4323-9434-c2e8eef5a758/speace_final.glb?v=1677890331913"
+        ></a-asset-item>
+        <a-asset-item
+          id="yelloweel"
+          src="https://cdn.glitch.global/fbbdc88f-0824-4323-9434-c2e8eef5a758/eeltest.glb?v=1677889493174"
+        >
+        </a-asset-item>
+        <a-asset-item
+          id="angler"
+          src="https://cdn.glitch.global/fbbdc88f-0824-4323-9434-c2e8eef5a758/angler_anim.glb?v=1677917008616"
+        >
+        </a-asset-item>
+
+        <!--street assets-->
+        <a-asset-item
+          id="street"
+          src="https://cdn.glitch.global/fbbdc88f-0824-4323-9434-c2e8eef5a758/street_final.glb?v=1678258933355"
+        ></a-asset-item>
+
+        <!--isles assets-->
+
+        <a-asset-item
+          id="isles"
+          src="https://cdn.glitch.me/fbbdc88f-0824-4323-9434-c2e8eef5a758/isles.glb?v=1678086736218"
+        >
+        </a-asset-item>
+        <a-asset-item
+          id="fire"
+          src="https://cdn.glitch.global/fbbdc88f-0824-4323-9434-c2e8eef5a758/fire_anim.glb?v=1678087058681"
+        >
+        </a-asset-item>
+
+        <!--geometry assets-->
+        <a-asset-item
+          id="geometry"
+          src="https://cdn.glitch.global/fbbdc88f-0824-4323-9434-c2e8eef5a758/geometry.glb?v=1678076043995"
+        >
+        </a-asset-item>
+        <a-asset-item
+          id="sphere"
+          src="https://cdn.glitch.global/fbbdc88f-0824-4323-9434-c2e8eef5a758/sphere.glb?v=1678076974422"
+        >
+        </a-asset-item>
+      </a-assets>
+
+      <!--forest scene -->
+      <a-marker
+        id="forest_marker"
+        type="pattern"
+        url="https://cdn.glitch.global/fbbdc88f-0824-4323-9434-c2e8eef5a758/forest_marker.patt?v=1676565679289"
+        smooth="true"
+      >
+        <a-entity
+          id="forest_ent"
+          scale=".2 .2 .2"
+          position="-5 -5 3"
+          rotation="0 -90 90"
+        >
+          <a-entity gltf-model="#portal" cloak2> </a-entity>
+          <a-entity
+            id="portal_forest"
+            gltf-model="#portalspin"
+            model-opacity="1"
+          >
+          </a-entity>
+
+          <a-entity id="scene_forest" gltf-model="#forest"> </a-entity>
+        </a-entity>
+      </a-marker>
+
+      <!--space/sea scene-->
+      <a-marker
+        id="speace_marker"
+        type="pattern"
+        url="https://cdn.glitch.global/fbbdc88f-0824-4323-9434-c2e8eef5a758/speace_marker.patt?v=1677602938325"
+        smooth="true"
+      >
+        <a-entity scale=".2 .2 .2" position="-5 -5 3" rotation="0 -90 90">
+          <a-entity gltf-model="#portal" cloak2> </a-entity>
+          <a-entity
+            id="portal_speace"
+            gltf-model="#portalspin"
+            model-opacity="1"
+          >
+          </a-entity>
+          <a-entity
+            gltf-model="#yelloweel"
+            animation-mixer="clip:*; loop:repeat; clampWhenFinished:true"
+          >
+          </a-entity>
+          <a-entity
+            gltf-model="#speace"
+            animation-mixer="clip:*; loop:repeat; clampWhenFinished:true"
+          >
+          </a-entity>
+          <a-entity id="scene_angler" gltf-model="#angler"> </a-entity>
+        </a-entity>
+      </a-marker>
+
+      <!-- street scene -->
+      <a-marker
+        id="street_marker"
+        type="pattern"
+        url="https://cdn.glitch.global/fbbdc88f-0824-4323-9434-c2e8eef5a758/street_marker.patt?v=1677993232356"
+        smooth="true"
+      >
+        <a-entity scale=".2 .2 .2" position="-5 -5 3" rotation="0 -90 90">
+          <a-entity gltf-model="#portal" cloak2> </a-entity>
+          <a-entity
+            id="portal_street"
+            gltf-model="#portalspin"
+            model-opacity="1"
+          >
+          </a-entity>
+
+          <a-entity
+            id="scene_street"
+            gltf-model="#street"
+            scale="20 20 20"
+            position="-150 -80 -50"
+          >
+          </a-entity>
+        </a-entity>
+      </a-marker>
+
+      <!--isles scene-->
+      <a-marker
+        id="isles_marker"
+        type="pattern"
+        url="https://cdn.glitch.global/fbbdc88f-0824-4323-9434-c2e8eef5a758/isles_marker.patt?v=1677993225693"
+        smooth="true"
+      >
+        <a-entity scale=".2 .2 .2" position="-5 -5 3" rotation="0 -90 90">
+          <a-entity gltf-model="#portal" cloak2> </a-entity>
+          <a-entity
+            id="portal_isles"
+            gltf-model="#portalspin"
+            model-opacity="1"
+          >
+          </a-entity>
+          <a-entity scale="6 6 6" rotation="0 90 0" position="0 10 -30 ">
+            <a-entity
+              gltf-model="#isles"
+              animation-mixer="clip:*; loop:repeat; clampWhenFinished:true"
+            >
+            </a-entity>
+            <a-entity id="scene_isles" gltf-model="#fire"> </a-entity>
+          </a-entity>
+        </a-entity>
+      </a-marker>
+
+      <!--geometry scene-->
+      <a-marker
+        id="geometry_marker"
+        type="pattern"
+        url="https://cdn.glitch.global/fbbdc88f-0824-4323-9434-c2e8eef5a758/geometric_marker.patt?v=1677993229261"
+        smooth="true"
+      >
+        <a-entity scale=".2 .2 .2" position="-5 -5 3" rotation="0 -90 90">
+          <a-entity gltf-model="#portal" cloak2> </a-entity>
+          <a-entity
+            id="portal_geometry"
+            gltf-model="#portalspin"
+            model-opacity="1"
+          >
+          </a-entity>
+          <a-entity position="0 0 -30">
+            <a-entity
+              gltf-model="#geometry"
+              animation-mixer="clip:*; loop:repeat; clampWhenFinished:true"
+            >
+            </a-entity>
+            <a-entity id="scene_geometry" gltf-model="#sphere"> </a-entity>
+          </a-entity>
+        </a-entity>
+      </a-marker>
+
+      <a-entity camera> </a-entity>
+    </a-scene>
+    <script>
+      let forestFound = false;
+      let speaceFound = false;
+      let streetFound = false;
+      let islesFound = false;
+      let geometryFound = false;
+
+      var f = document.getElementById("forest_marker");
+      var s = document.getElementById("speace_marker");
+      var st = document.getElementById("street_marker");
+      var i = document.getElementById("isles_marker");
+      var g = document.getElementById("geometry_marker");
+
+      <!--detection for forest-->
+      f.addEventListener("markerFound", (e) => {
+        console.log("found");
+        forestFound = true;
+        console.log(forestFound);
+        <!--add ids to other markers, set variables to switch to true/false to correspond with forest_animate() (respective to each world) -->
+      });
+
+      f.addEventListener("markerLost", (e) => {
+        forestFound = false;
+      });
+      <!-- detection for speace-->
+      s.addEventListener("markerFound", (e) => {
+        console.log("found");
+        speaceFound = true;
+        <!--add ids to other markers, set variables to switch to true/false to correspond with forest_animate() (respective to each world) -->
+      });
+
+      s.addEventListener("markerLost", (e) => {
+        speaceFound = false;
+      });
+      <!-- detection for street-->
+      st.addEventListener("markerFound", (e) => {
+        streetFound = true;
+        <!--add ids to other markers, set variables to switch to true/false to correspond with forest_animate() (respective to each world) -->
+      });
+
+      st.addEventListener("markerLost", (e) => {
+        streetFound = false;
+      });
+      <!--detection for isles-->
+      i.addEventListener("markerFound", (e) => {
+        console.log("found");
+        islesFound = true;
+        <!--add ids to other markers, set variables to switch to true/false to correspond with forest_animate() (respective to each world) -->
+      });
+
+      i.addEventListener("markerLost", (e) => {
+        islesFound = false;
+      });
+      <!--detection for geometric-->
+      g.addEventListener("markerFound", (e) => {
+        console.log("found");
+        geometryFound = true;
+        <!--add ids to other markers, set variables to switch to true/false to correspond with forest_animate() (respective to each world) -->
+      });
+
+      g.addEventListener("markerLost", (e) => {
+        geometryFound = false;
+      });
+
+      function animate_scene() {
+        if (forestFound == true) {
+          forest_animate();
+        } else if (speaceFound) {
+          speace_animate();
+        } else if (streetFound) {
+          street_animate();
+        } else if (islesFound) {
+          isles_animate();
+        } else if (geometryFound) {
+          geometry_animate();
+        }
+      }
+
+      function forest_animate() {
+        <!--This will become general animate function that calls each specific animate function depending on true/false variables -->
+
+        document
+          .getElementById("scene_forest")
+          .removeAttribute("animation-mixer");
+
+        document
+          .getElementById("scene_forest")
+          .setAttribute(
+            "animation-mixer",
+            "clip: *; loop:once; clampWhenFinished:true"
+          );
+      }
+
+      function speace_animate() {
+        document
+          .getElementById("scene_angler")
+          .removeAttribute("animation-mixer");
+        document
+          .getElementById("scene_angler")
+          .setAttribute(
+            "animation-mixer",
+            "clip: *; loop:once; clampWhenFinished:true"
+          );
+        console.log("animating");
+      }
+
+      function street_animate() {
+        document
+          .getElementById("scene_street")
+          .removeAttribute("animation-mixer");
+        document
+          .getElementById("scene_street")
+          .setAttribute(
+            "animation-mixer",
+            "clip: *; loop:once; clampWhenFinished:true"
+          );
+      }
+
+      function isles_animate() {
+        document
+          .getElementById("scene_isles")
+          .removeAttribute("animation-mixer");
+        document
+          .getElementById("scene_isles")
+          .setAttribute(
+            "animation-mixer",
+            "clip: *; loop:once; clampWhenFinished:true"
+          );
+      }
+
+      function geometry_animate() {
+        document
+          .getElementById("scene_geometry")
+          .removeAttribute("animation-mixer");
+        document
+          .getElementById("scene_geometry")
+          .setAttribute(
+            "animation-mixer",
+            "clip: *; loop:once; clampWhenFinished:true"
+          );
+      }
+
+      function portal_animate() {
+        <!--maybe do a first time found check so each portal animates when the marker is first found, but not after that -->
+        <!--time limit?-->
+        let forest = document.getElementById("forest_ent");
+        let forest_p = document.getElementById("portal_forest");
+
+        if (forestFound) {
+          forest_p.setAttribute(
+            "animation-mixer",
+            "clip: *; loop:once; clampWhenFinished:true"
+          );
+
+          forest_p.setAttribute(
+            "animation",
+            "property: model-opacity; to: 0; dur:2000; easing:linear; loop: false"
+          );
+        } else if (speaceFound) {
+          document
+            .getElementById("portal_speace")
+            .setAttribute(
+              "animation-mixer",
+              "clip: *; loop:once; clampWhenFinished:true"
+            );
+          document
+            .getElementById("portal_speace")
+            .setAttribute(
+              "animation",
+              "property: model-opacity; to: 0; dur:2000; easing:linear; loop: false"
+            );
+        } else if (streetFound) {
+          document
+            .getElementById("portal_street")
+            .setAttribute(
+              "animation-mixer",
+              "clip: *; loop:once; clampWhenFinished:true"
+            );
+          document
+            .getElementById("portal_street")
+            .setAttribute(
+              "animation",
+              "property: model-opacity; to: 0; dur:2000; easing:linear; loop: false"
+            );
+        } else if (islesFound) {
+          document
+            .getElementById("portal_isles")
+            .setAttribute(
+              "animation-mixer",
+              "clip: *; loop:once; clampWhenFinished:true"
+            );
+          document
+            .getElementById("portal_isles")
+            .setAttribute(
+              "animation",
+              "property: model-opacity; to: 0; dur:2000; easing:linear; loop: false"
+            );
+        } else if (geometryFound) {
+          document
+            .getElementById("portal_geometry")
+            .setAttribute(
+              "animation-mixer",
+              "clip: *; loop:once; clampWhenFinished:true"
+            );
+          document
+            .getElementById("portal_geometry")
+            .setAttribute(
+              "animation",
+              "property: model-opacity; to: 0; dur:2000; easing:linear; loop: false"
+            );
+        }
+      }
+    </script>
+  </body>
+</html>
